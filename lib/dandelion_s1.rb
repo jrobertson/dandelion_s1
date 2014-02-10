@@ -50,8 +50,8 @@ class DandelionS1 < RackRscript
       elsif File.exists? filepath then
         h = {xml: 'application/xml', html: 'text/html', png: 'image/png', 
              jpg: 'image/jpeg', txt: 'text/plain'}
-
-        [File.read(filepath), h[filepath[/\w+$/].to_sym]]
+        content_type = h[filepath[/\w+$/].to_sym]
+        [File.read(filepath), content_type || 'text/plain']
       else
         'oops, file ' + filepath + ' not found'
       end
