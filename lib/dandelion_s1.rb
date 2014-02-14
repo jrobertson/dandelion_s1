@@ -44,7 +44,7 @@ class DandelionS1 < RackRscript
 
       if path.length < 1 or path[-1] == '/' then
         path += 'index.html' 
-        File.read File.join(base, path)
+        File.read File.join(@root, path)
       elsif File.directory? filepath then
         Redirect.new (path + '/') 
       elsif File.exists? filepath then
