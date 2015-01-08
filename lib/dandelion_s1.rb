@@ -16,7 +16,7 @@ class DandelionS1 < RackRscript
 
     #@access_list = {'/do/r/hello3' => 'user'}
     @access_list = raw_opts[:access]
-    puts 'inside initialize'
+
     super(raw_opts)
   end
 
@@ -39,7 +39,7 @@ class DandelionS1 < RackRscript
 
     super(env, params)
 
-    get /(\/(?:#{@static.join('|')}).*)/ do |path|
+    get /^(\/(?:#{@static.join('|')}).*)/ do |path|
 
       filepath = File.join(@root, path)
 

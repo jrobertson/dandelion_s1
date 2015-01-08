@@ -16,6 +16,7 @@ class DandelionS1 < RackRscript
 
     #@access_list = {'/do/r/hello3' => 'user'}
     @access_list = raw_opts[:access]
+    puts 'inside initialize'
     super(raw_opts)
   end
 
@@ -49,7 +50,8 @@ class DandelionS1 < RackRscript
         Redirect.new (path + '/') 
       elsif File.exists? filepath then
         h = {xml: 'application/xml', html: 'text/html', png: 'image/png', 
-             jpg: 'image/jpeg', txt: 'text/plain'}
+             jpg: 'image/jpeg', txt: 'text/plain', css: 'text/css',
+             xsl: 'application/xml'}
         content_type = h[filepath[/\w+$/].to_sym]
         [File.read(filepath), content_type || 'text/plain']
       else
