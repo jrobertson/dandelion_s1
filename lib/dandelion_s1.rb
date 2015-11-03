@@ -10,6 +10,7 @@ class DandelionS1 < RackRscript
   def initialize(h={})
 
     raw_opts = {root: 'www', access: {}, static: []}.merge h
+    @app_root = Dir.pwd
     #@static = %w(index.html dynarex snippets)
     @static = raw_opts[:static]
     @root = raw_opts[:root]
@@ -41,11 +42,12 @@ class DandelionS1 < RackRscript
 
     get /^(\/(?:#{@static.join('|')}).*)/ do |path|
 
-      filepath = File.join(@root, path)
+      filepath = File.join(@app_root, @root, path)
+      log("root: %s path: %s" % [@root, path])
 
       if path.length < 1 or path[-1] == '/' then
         path += 'index.html' 
-        File.read File.join(@root, path)
+        File.read filepath
       elsif File.directory? filepath then
         Redirect.new (path + '/') 
       elsif File.exists? filepath then
