@@ -11,14 +11,14 @@ class DandelionS1 < RackRscript
 
     raw_opts = {root: 'www', access: {}, static: []}.merge h
     @app_root = Dir.pwd
-    #@static = %w(index.html dynarex snippets)
+
     @static = raw_opts[:static]
     @root = raw_opts[:root]
 
     #@access_list = {'/do/r/hello3' => 'user'}
     @access_list = raw_opts[:access]
 
-    super(raw_opts)
+    super(logfile: h[:logfile],  pkg_src: h[:pkg_src])
   end
 
   def call(e)
