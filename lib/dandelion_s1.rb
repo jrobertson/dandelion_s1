@@ -18,7 +18,8 @@ class DandelionS1 < RackRscript
     #@access_list = {'/do/r/hello3' => 'user'}
     @access_list = raw_opts[:access]
 
-    super(logfile: h[:logfile],  pkg_src: h[:pkg_src])
+    super(logfile: h[:logfile],  pkg_src: h[:pkg_src], rsc_host: h[:rsc_host], 
+          rsc_package_src: h[:rsc_package_src])
   end
 
   def call(e)
