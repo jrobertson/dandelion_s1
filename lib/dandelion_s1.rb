@@ -25,8 +25,13 @@ class DandelionS1 < RackRscript
   def call(e)
 
     private_user = @access_list[e['REQUEST_PATH']]
-
-    if private_user.nil? or private_user == e['REMOTE_USER'] then
+    
+    
+    if private_user.nil? then 
+      super(e)
+    elsif private_user.is_a? String and private_user == e['REMOTE_USER']
+      super(e)
+    elsif private_user.is_a? Array and private_user.any? {|x| x == e['REMOTE_USER']}
       super(e)
     else
       request = '/unauthorised/'
