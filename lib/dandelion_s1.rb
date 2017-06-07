@@ -3,6 +3,7 @@
 # file: dandelion_s1.rb
 
 require 'rack-rscript'
+require 'simple-config'
 
 
 class DandelionS1 < RackRscript
@@ -16,8 +17,13 @@ class DandelionS1 < RackRscript
     @root = raw_opts[:root]
 
     #@access_list = {'/do/r/hello3' => 'user'}
-    @access_list = raw_opts[:access]
-
+    access_list = raw_opts[:access]
+        
+    h2 = SimpleConfig.new(access_list).to_h
+    conf_access = h2[:body] || h2
+    @access_list = conf_access.inject({}) \
+                                {|r,x| k,v = x; r.merge(k.to_s => v.split)}
+    
     super(logfile: h[:logfile],  pkg_src: h[:pkg_src], rsc_host: h[:rsc_host], 
           rsc_package_src: h[:rsc_package_src])
   end
