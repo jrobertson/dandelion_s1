@@ -30,8 +30,9 @@ class DandelionS1 < RackRscript
 
   def call(e)
 
-    private_user = @access_list[e['REQUEST_PATH']]
-    
+    request = e['REQUEST_PATH']
+    r = @access_list.detect {|k,v| request =~ Regexp.new(k)}
+    private_user = r ? r.last : nil
     
     if private_user.nil? then 
       super(e)
