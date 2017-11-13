@@ -10,7 +10,7 @@ class DandelionS1 < RackRscript
 
   def initialize(h={})
 
-    raw_opts = {root: 'www', access: {}, static: []}.merge h
+    raw_opts = {root: 'www', access: {}, static: [], log: nil}.merge h
     @app_root = Dir.pwd
 
     @static = raw_opts[:static]
@@ -24,7 +24,7 @@ class DandelionS1 < RackRscript
     @access_list = conf_access.inject({}) \
                                 {|r,x| k,v = x; r.merge(k.to_s => v.split)}
     
-    super(logfile: h[:logfile],  pkg_src: h[:pkg_src], rsc_host: h[:rsc_host], 
+    super(log: h[:log],  pkg_src: h[:pkg_src], rsc_host: h[:rsc_host], 
           rsc_package_src: h[:rsc_package_src])
   end
 
@@ -38,7 +38,8 @@ class DandelionS1 < RackRscript
       super(e)
     elsif private_user.is_a? String and private_user == e['REMOTE_USER']
       super(e)
-    elsif private_user.is_a? Array and private_user.any? {|x| x == e['REMOTE_USER']}
+    elsif private_user.is_a? Array and 
+        private_user.any? {|x| x == e['REMOTE_USER']}
       super(e)
     else
       request = '/unauthorised/'
@@ -56,7 +57,11 @@ class DandelionS1 < RackRscript
     get /^(\/(?:#{@static.join('|')}).*)/ do |path|
 
       filepath = File.join(@app_root, @root, path)
-      log("root: %s path: %s" % [@root, path])
+
+      if @log then
+        @log.info 'DandelionS1/default_routes: ' + 
+            "root: %s path: %s" % [@root, path]
+      end
 
       if path.length < 1 or path[-1] == '/' then
         path += 'index.html' 
@@ -66,7 +71,7 @@ class DandelionS1 < RackRscript
       elsif File.exists? filepath then
         h = {xml: 'application/xml', html: 'text/html', png: 'image/png', 
              jpg: 'image/jpeg', txt: 'text/plain', css: 'text/css',
-             xsl: 'application/xml'}
+             xsl: 'application/xml', svg: 'image/svg+xml'}
         content_type = h[filepath[/\w+$/].to_sym]
         [File.read(filepath), content_type || 'text/plain']
       else
