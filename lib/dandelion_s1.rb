@@ -2,94 +2,129 @@
 
 # file: dandelion_s1.rb
 
+require 'martile'
 require 'rack-rscript'
 require 'simple-config'
 
 
 class DandelionS1 < RackRscript
 
-  def initialize(h={})
+  def initialize(opts={})
 
-    raw_opts = {root: 'www', access: {}, static: [], log: nil}.merge h
+    h = {root: 'www', static: []}.merge(opts)
+    
+    access_list = h[:access]
     @app_root = Dir.pwd
 
-    @static = raw_opts[:static]
-    @root = raw_opts[:root]
-
     #@access_list = {'/do/r/hello3' => 'user'}
-    access_list = raw_opts[:access]
         
-    h2 = SimpleConfig.new(access_list).to_h
-    conf_access = h2[:body] || h2
-    @access_list = conf_access.inject({}) \
-                                {|r,x| k,v = x; r.merge(k.to_s => v.split)}
+    if access_list then
+      
+      h2 = SimpleConfig.new(access_list).to_h
+      conf_access = h2[:body] || h2
+      @access_list = conf_access.inject({}) \
+                                  {|r,x| k,v = x; r.merge(k.to_s => v.split)}
     
-    super(log: h[:log],  pkg_src: h[:pkg_src], rsc_host: h[:rsc_host], 
-          rsc_package_src: h[:rsc_package_src])
+    end
+    
+    h3 = %i(log pkg_src rsc_host rsc_package_src root static debug)\
+        .inject({}) {|r,x| r.merge(x => h[x])}
+    
+    super(h3)
+    
   end
 
   def call(e)
 
     request = e['REQUEST_PATH']
-    r = @access_list.detect {|k,v| request =~ Regexp.new(k)}
+    
+    return super(e) if request == '/login'
+    r = @access_list.detect {|k,v| request =~ Regexp.new(k)} if @access_list
     private_user = r ? r.last : nil
     
-    if private_user.nil? then 
+    req = Rack::Request.new(e)
+    user = req.session[:username]
+    #return [status_code=401, {"Content-Type" => 'text/plain'}, [user.inspect]]
+    return jumpto '/login' unless user
+    
+    if private_user.nil? then
       super(e)
-    elsif private_user.is_a? String and private_user == e['REMOTE_USER']
-      super(e)
-    elsif private_user.is_a? Array and 
-        private_user.any? {|x| x == e['REMOTE_USER']}
+    elsif (private_user.is_a? String and private_user == user) \
+        or (private_user.is_a? Array and private_user.any? {|x| x == user})
       super(e)
     else
-      request = '/unauthorised/'
-      content, content_type, status_code = run_route(request)        
-      content_type ||= 'text/html'
-      [status_code=401, {"Content-Type" => content_type}, [content]]
+      jumpto '/unauthorised'
     end
 
   end
+  
+  protected
+  
+  def default_routes(env, params) 
+    
+    get '/login' do
+      
+s=<<EOF      
+login
+  username: [     ]
+  password: [     ]
 
-  def default_routes(env, params)
+  [login]('/login')
+EOF
 
-    super(env, params)
+      Martile.new(s).to_html
+    end    
+    
+    post '/login' do
+      
+      h = @req.params
+      @req.session[:username] = h['username']
 
-    get /^(\/(?:#{@static.join('|')}).*)/ do |path|
-
-      filepath = File.join(@app_root, @root, path)
-
-      if @log then
-        @log.info 'DandelionS1/default_routes: ' + 
-            "root: %s path: %s" % [@root, path]
-      end
-
-      if path.length < 1 or path[-1] == '/' then
-        path += 'index.html' 
-        File.read filepath
-      elsif File.directory? filepath then
-        Redirect.new (path + '/') 
-      elsif File.exists? filepath then
-        h = {xml: 'application/xml', html: 'text/html', png: 'image/png', 
-             jpg: 'image/jpeg', txt: 'text/plain', css: 'text/css',
-             xsl: 'application/xml', svg: 'image/svg+xml'}
-        content_type = h[filepath[/\w+$/].to_sym]
-        [File.read(filepath), content_type || 'text/plain']
+      'you are now logged in as ' + h['username']
+      
+    end
+        
+    get '/logout' do
+      
+      @req.session.clear
+      'you are now logged out'
+      
+    end       
+    
+    get '/session' do
+      
+      #@req.session.expires
+      #@req.session.options[:expire_after] = 1
+      @req.session.options.inspect
+      
+    end
+    
+    get '/user' do
+      
+      if @req.session[:username] then
+        'You are ' + @req.session[:username]
       else
-        'oops, file ' + filepath + ' not found'
-      end
-
+        'you need to log in to view this page'
+      end      
+      
     end
 
-    get /^\/$/ do
-
-      file = File.join(@root, 'index.html')
-      File.read file
-    end
-
-    get '/unauthorised/' do
+    get '/unauthorised' do
       'unauthorised user'
     end
+    
+    super(env, params)   
  
-  end 
+  end   
+  
+  private
+  
+  def jumpto(request)
+    
+    content, content_type, status_code = run_route(request)        
+    content_type ||= 'text/html'
+    [status_code=401, {"Content-Type" => content_type}, [content]]    
+    
+  end
 
 end
