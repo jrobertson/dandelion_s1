@@ -1,6 +1,6 @@
-# Introducing the Dandelion_s1 gem
+# Dandelion_s1 now uses cookie based authentication
 
-Dandelion_s1 is built upon Rack-Rscript and facilitates static files, basic authentication, and private pages.
+Dandelion_s1 is built upon Rack-Rscript and facilitates static files, coookie based authentication, and private pages.
 
 ## Example
 
@@ -8,23 +8,22 @@ Dandelion_s1 is built upon Rack-Rscript and facilitates static files, basic auth
 
     require 'dandelion_s1'
 
-    use Rack::Auth::Basic, "Restricted Area" do |user, password|
+    use Rack::Static, :urls => ['/xsl', '/dynarex'], :root => 'www'
+    use Rack::Session::Cookie, :key => 'rack.session',
+      :expire_after => 2592000,
+      :secret => 'change_me'
 
-      passwords = {"user" => "0rang3", "rubycafe" => "c4g31"}
-      passwords[user] == password
-      
-    end
-
-    options = {
-      pkg_src: 'http://rorbuilder.info/r', 
-       static: %w(dynarex css images), 
-       access: {'/do/r/hello' => 'user'},
-         root: 'www'
+    h = {
+      pkg_src: 'http://rorbuilder.info/r',
+      log_file: '/tmp/ds1.log',
+      rsc_host: 'rse',
+      rsc_package_src: 'http://yoursite.com',
+      debug: true
     }
 
-    run DandelionS1.new(options)
+    run DandelionS1.new(h)
 
-## Running the example      
+## Running the example
 
 `rackup ds1.ru -p 3003`
 
@@ -37,10 +36,10 @@ Then point your browser to `http://127.0.0.1:3003/do/r/hello` and it should requ
 * **access** (optional) Private pages only a specific user can access
 * **root**   (optional) The web server root directory for serving static files.
 
-Note: The middleware Rack::Static could have been used, however I wanted something more flexible i.e. default index.html file rendered when a directory name is given.
+Note: The rorbuilder.info domain used in this example is no longer owned by me, however I still use that domain name locally on my intranet.
 
 ## Resources
 
 * [jrobertson/dandelion_s1](https://github.com/jrobertson/dandelion_s1)
 
-dandelion_s1 gem
+rack dandelion_s1 dandelions1 dandelion cookies cookie session
