@@ -11,8 +11,9 @@ class DandelionS1 < RackRscript
 
   def initialize(opts={})
 
-    h = {root: 'www', static: []}.merge(opts)
+    h = {root: 'www', static: [], passwords: {'user' => 'us3r'}}.merge(opts)
     
+    @passwords = h[:passwords]
     access_list = h[:access]
     @app_root = Dir.pwd
 
@@ -44,7 +45,7 @@ class DandelionS1 < RackRscript
     
     req = Rack::Request.new(e)
     user = req.session[:username]
-    #return [status_code=401, {"Content-Type" => 'text/plain'}, [user.inspect]]
+
     return jumpto '/login' unless user
     
     if private_user.nil? then
@@ -64,23 +65,24 @@ class DandelionS1 < RackRscript
     
     get '/login' do
       
-s=<<EOF      
-login
-  username: [     ]
-  password: [     ]
-
-  [login]('/login')
-EOF
-
-      Martile.new(s).to_html
+      login_form()
+      
     end    
     
     post '/login' do
       
       h = @req.params
-      @req.session[:username] = h['username']
 
-      'you are now logged in as ' + h['username']
+      if @passwords[h['username']] == h['password'] then
+        
+        @req.session[:username] = h['username']
+        'you are now logged in as ' + h['username']
+        
+      else
+        
+        login_form('Invalid username or password, try again.',401)
+        
+      end
       
     end
         
@@ -110,21 +112,28 @@ EOF
     end
 
     get '/unauthorised' do
-      'unauthorised user'
+      ['unauthorised user', 'text/plain', 403]      
     end
     
     super(env, params)   
  
   end   
   
-  private
-  
-  def jumpto(request)
+  def login_form(msg='Log in to this site.', http_code=200)
     
-    content, content_type, status_code = run_route(request)        
-    content_type ||= 'text/html'
-    [status_code=401, {"Content-Type" => content_type}, [content]]    
-    
+s=<<EOF      
+p #{msg}
+
+login
+  username: [     ]
+  password: [     ]
+
+  [login]('/login')
+EOF
+
+    [Martile.new(s).to_s, 'text/slim', http_code]
+
   end
+
 
 end

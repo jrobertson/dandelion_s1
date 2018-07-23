@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'dandelion_s1'
-  s.version = '0.3.0'
+  s.version = '0.3.1'
   s.summary = 'A kind of Rack-Rscript web server which facilitates ' +
       'static files, cookie based authentication, and private pages.'
   s.authors = ['James Robertson']
