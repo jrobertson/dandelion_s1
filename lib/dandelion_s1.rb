@@ -32,12 +32,15 @@ class DandelionS1 < RackRscript
         .inject({}) {|r,x| r.merge(x => h[x])}
     
     super(h3)
+    @log.debug '@access_list: ' + @access_list.inspect if @log    
+    @log.debug 'end of initialize' if @log
     
   end
 
   def call(e)
 
     request = e['REQUEST_PATH']
+    @log.debug 'request: ' + request.inspect if @log
     
     return super(e) if request == '/login'
     r = @access_list.detect {|k,v| request =~ Regexp.new(k)} if @access_list
@@ -46,7 +49,9 @@ class DandelionS1 < RackRscript
     req = Rack::Request.new(e)
     user = req.session[:username]
 
-    return jumpto '/login' unless user
+    #@log.debug 'user: ' + user.inspect if @log
+    #@log.debug '@e: ' + e.inspect if @log
+    return jumpto '/login2?referer=' + e['PATH_INFO'] unless user
     
     if private_user.nil? then
       super(e)
@@ -63,10 +68,16 @@ class DandelionS1 < RackRscript
   
   def default_routes(env, params) 
     
-    get '/login' do
-      
-      login_form()
-      
+    log = @log
+    
+    get '/login2/*' do
+      params[:splat].inspect
+      redirect '/login' + params[:splat].first
+    end
+    
+    get '/login/*' do      
+      url = params[:splat].any? ? params[:splat][0][/(?<=referer=).*/] : '/'
+      login_form(referer: url)      
     end    
     
     post '/login' do
@@ -76,13 +87,15 @@ class DandelionS1 < RackRscript
       if @passwords[h['username']] == h['password'] then
         
         @req.session[:username] = h['username']
-        'you are now logged in as ' + h['username']
+        #'you are now logged in as ' + h['username']
+        redirect h['referer']
         
       else
         
         login_form('Invalid username or password, try again.',401)
         
       end
+
       
     end
         
@@ -119,7 +132,7 @@ class DandelionS1 < RackRscript
  
   end   
   
-  def login_form(msg='Log in to this site.', http_code=200)
+  def login_form(msg='Log in to this site.', http_code=200, referer: '/')
     
 s=<<EOF      
 p #{msg}
@@ -127,8 +140,9 @@ p #{msg}
 login
   username: [     ]
   password: [     ]
-
-  [login]('/login')
+  [! referer: #{referer}
+   ]
+  [login](/login)
 EOF
 
     [Martile.new(s).to_s, 'text/slim', http_code]
