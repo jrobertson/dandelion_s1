@@ -8,6 +8,7 @@ require 'simple-config'
 
 
 class DandelionS1 < RackRscript
+  include RXFHelperModule
 
   def initialize(opts={})
 
@@ -15,7 +16,6 @@ class DandelionS1 < RackRscript
 
     @passwords = h[:passwords]
     access_list = h[:access]
-    @app_root = Dir.pwd
 
     #@access_list = {'/do/r/hello3' => 'user'}
 
@@ -106,13 +106,13 @@ class DandelionS1 < RackRscript
 
     end
 
-    get '/session' do
+    #get '/session' do
 
       #@req.session.expires
       #@req.session.options[:expire_after] = 1
-      @req.session.options.inspect
+      #@req.session.options.inspect
 
-    end
+    #end
 
     get '/user' do
 
