@@ -8,7 +8,6 @@ require 'simple-config'
 
 
 class DandelionS1 < RackRscript
-  include RXFHelperModule
 
   def initialize(opts={})
 
@@ -148,6 +147,5 @@ EOF
     [Martile.new(s).to_s, 'text/slim', http_code]
 
   end
-
 
 end
